@@ -119,14 +119,14 @@
             <button class="btn btn-info" type="button" @click="exportImages">导出图片</button>
             <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
             <span>缩放比例：</span>
-            <select class="input" v-model="scale" style="width: 100px" placeholder="缩放比例">
+            <select class="input" @change="selectChange" v-model="scale" style="width: 100px" placeholder="缩放比例">
               <option :value="0.5">0.5</option>
               <option :value="0.8">0.8</option>
               <option :value="1">1</option>
               <option :value="1.5">1.5</option>
               <option :value="2">2</option>
             </select>
-            <span class="text-orange">(切换后需重新选择文件)</span>
+            <span>0.5</span><input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.2"><span>2</span>
             <div class="info">
               <div>页数：<b>{{pages}}</b></div>
               <div>文件名：<b>{{fileName}}</b></div>
@@ -161,7 +161,6 @@
             if (!file) {
               return;
             }
-            this.$refs.container.innerHTML = "";
             const size = file.size;
             const mb = (size / 1048576).toFixed(2) + "Mb";
             this.fileSize = mb;
@@ -190,6 +189,7 @@
             };
           },
           renderPdf(pdf) {
+            this.$refs.container.innerHTML = "";
             const vm = this;
             for (let i = 1; i <= pdf.numPages; i++) {
               pdf.getPage(i).then(function (page) {
@@ -205,6 +205,12 @@
                   viewport: viewport,
                 });
               });
+            }
+          },
+          selectChange(e) {
+            const value = e.target.value;
+            if (this.pdf) {
+              this.renderPdf(this.pdf);
             }
           },
           exportImages() {
