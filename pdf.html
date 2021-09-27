@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pdf2png</title>
     <style>
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
       .flex {
         display: flex;
       }
@@ -56,6 +64,10 @@
         border-radius: 4px;
       }
 
+      .btn:hover {
+        opacity: 0.8;
+      }
+
       .btn-primary {
         background-color: #38f;
         color: #fff;
@@ -71,15 +83,20 @@
         outline: none;
         border: 1px solid #ddd;
         border-radius: 4px;
-        margin: 0 8px;
-        padding-left: 5px;
+        margin-right: 8px;
         width: 180px;
+        padding-left: 5px;
+      }
+
+      .input:focus {
+        border-color: #cbe5f7;
       }
 
       .info {
         position: absolute;
         top: 5px;
         left: 10px;
+        font-size: 12px;
       }
 
       canvas {
@@ -106,12 +123,12 @@
               <input @change="fileChange" type="file" style="display:none">
               选择一个pdf文件
             </label>
-            <button class="btn btn-info" type="button" @click="exportImages">下载</button>
+            <button class="btn btn-info" type="button" @click="exportImages">导出图片</button>
             <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
             <div class="info">
-              <div><b>页数</b>：{{pages}}</div>
-              <div><b>文件名</b>：{{fileName}}</div>
-              <div><b>文件大小</b>：{{fileSize}}</div>
+              <div>页数：<b>{{pages}}</b></div>
+              <div>文件名：<b>{{fileName}}</b></div>
+              <div>文件大小：<b>{{fileSize}}</b></div>
             </div>
         </footer>
       </div>
@@ -189,6 +206,10 @@
           },
           exportImages() {
             const oCanvass = document.getElementsByTagName("canvas");
+            if (!oCanvass.length) {
+              alert("请先导入PDF文件");
+              return;
+            }
             downloadQueue(Array.from(oCanvass), this.exportName);
           },
         },
