@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pdf2png</title>
+    <title>pdf2image</title>
     <style>
       html {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI,
@@ -19,6 +19,9 @@
       }
       .flex {
         display: flex;
+      }
+      .inline-flex {
+        display: inline-flex;
       }
       .flex-1 {
         flex: 1;
@@ -86,7 +89,8 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         margin-right: 8px;
-        width: 180px;
+        margin-left: 8px;
+        width: 140px;
         padding-left: 5px;
       }
       .input:focus {
@@ -96,6 +100,15 @@
         position: absolute;
         top: 5px;
         left: 10px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .set-wrap {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        top: 8px;
+        right: 10px;
         font-size: 12px;
         line-height: 1.5;
       }
@@ -119,15 +132,22 @@
         <div class="container" id="container" ref="container"></div>
         <footer class="footer">
             <label class="btn btn-primary">
-              <input @change="fileChange" type="file" style="display:none">
+              <input @change="fileChange" accept="application/pdf" type="file" style="display:none">
               选择一个pdf文件
             </label>
             <button class="btn btn-info" type="button" @click="exportImages">导出图片</button>
-            <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
-            <div>
-              <div><span>缩放比例</span> <span class="text-orange">{{scale}}</span></div>
+            <div class="set-wrap">
+              <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
               <div>
-                <input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.1">
+                <div class="flex items-center" style="margin-bottom: 5px">
+                  <span>导出图片格式：</span>
+                  <label class="inline-flex items-center"><input v-model="suffix" type="radio" value="jpg">jpg</label>
+                  <label class="inline-flex items-center"><input v-model="suffix" type="radio" value="png">png</label>
+                </div>
+                <div class="flex">
+                  <div><span>缩放比例</span> <span class="text-orange">{{scale}}</span></div>
+                  <input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.1">
+                </div>
               </div>
             </div>
             <div class="info">
@@ -147,11 +167,11 @@
         template: "#template",
         data() {
           return {
-            loading: false,
             exportName: "",
             pages: "",
             fileName: "",
             fileSize: "",
+            suffix: "jpg",
             pdf: null,
             scale: 1,
           };
@@ -222,19 +242,21 @@
               alert("请先导入PDF文件");
               return;
             }
-            downloadQueue(Array.from(oCanvass), this.exportName);
+            downloadQueue(Array.from(oCanvass), this.exportName, this.suffix);
           },
         },
       });
 
-      function downloadQueue(list, name) {
+      function downloadQueue(list, name, suffix) {
         function getData(list) {
           var queue = [];
           list.forEach(function (canvas, index) {
             queue.push(function () {
-              const base64 = canvas.toDataURL("image/png");
-              var a = document.createElement("a");
-              a.download = `${name}${index + 1}.png`;
+              const base64 = canvas.toDataURL(
+                suffix == "jpg" ? "image/jpeg" : "image/png"
+              );
+              const a = document.createElement("a");
+              a.download = `${name}${index + 1}.${suffix}`;
               a.href = base64;
               document.body.appendChild(a);
               a.click();
