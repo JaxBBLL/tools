@@ -23,8 +23,14 @@
       .flex-1 {
         flex: 1;
       }
+      .items-center {
+        align-items: center;
+      }
       .text-orange {
         color: rgb(248, 140, 39);
+      }
+      .text-12 {
+        font-size: 12px;
       }
       body {
         margin: 0;
@@ -118,15 +124,12 @@
             </label>
             <button class="btn btn-info" type="button" @click="exportImages">导出图片</button>
             <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
-            <span>缩放比例：</span>
-            <select class="input" @change="selectChange" v-model="scale" style="width: 100px" placeholder="缩放比例">
-              <option :value="0.5">0.5</option>
-              <option :value="0.8">0.8</option>
-              <option :value="1">1</option>
-              <option :value="1.5">1.5</option>
-              <option :value="2">2</option>
-            </select>
-            <span>0.5</span><input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.2"><span>2</span>
+            <div>
+              <div><span>缩放比例</span> <span class="text-orange">{{scale}}</span></div>
+              <div>
+                <input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.1">
+              </div>
+            </div>
             <div class="info">
               <div>页数：<b>{{pages}}</b></div>
               <div>文件名：<b>{{fileName}}</b></div>
