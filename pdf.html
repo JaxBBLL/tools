@@ -4,33 +4,51 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pdf2png</title>
+    <title>pdf2image</title>
     <style>
+      html {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI,
+          Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
+          Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+        box-sizing: border-box;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
       .flex {
         display: flex;
+      }
+      .inline-flex {
+        display: inline-flex;
       }
       .flex-1 {
         flex: 1;
       }
-      .float-right {
-        float: right;
+      .items-center {
+        align-items: center;
+      }
+      .text-orange {
+        color: rgb(248, 140, 39);
+      }
+      .text-12 {
+        font-size: 12px;
       }
       body {
         margin: 0;
         font-size: 14px;
         overflow: hidden;
       }
-      .box {
+      .app {
         height: 100vh;
         overflow: auto;
       }
-
       .container {
         position: relative;
         height: 100vh;
       }
-
-      footer {
+      .footer {
         position: fixed;
         left: 0;
         right: 0;
@@ -38,13 +56,12 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        border-top: 1px solid #ddd;
         padding: 15px 0;
         z-index: 100;
         box-sizing: border-box;
-        background-color: #f5f5f5;
+        background-color: #fff;
+        box-shadow: 0px 0px 13px 0px #d0d0d0;
       }
-
       .btn {
         display: inline-block;
         height: 32px;
@@ -55,33 +72,46 @@
         cursor: pointer;
         border-radius: 4px;
       }
-
+      .btn:hover {
+        opacity: 0.8;
+      }
       .btn-primary {
         background-color: #38f;
         color: #fff;
       }
-
       .btn-info {
         background-color: rgb(255, 109, 51);
         color: #fff;
       }
-
       .input {
         height: 32px;
         outline: none;
         border: 1px solid #ddd;
         border-radius: 4px;
-        margin: 0 8px;
+        margin-right: 8px;
+        margin-left: 8px;
+        width: 140px;
         padding-left: 5px;
-        width: 180px;
       }
-
+      .input:focus {
+        border-color: #cbe5f7;
+      }
       .info {
         position: absolute;
         top: 5px;
         left: 10px;
+        font-size: 12px;
+        line-height: 1.5;
       }
-
+      .set-wrap {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        top: 8px;
+        right: 10px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
       canvas {
         position: relative;
         display: block;
@@ -98,20 +128,32 @@
   <body>
     <div id="app"></div>
     <script type="text/x-template" id="template">
-      <div class="box">
-
+      <div class="app">
         <div class="container" id="container" ref="container"></div>
-        <footer>
+        <footer class="footer">
             <label class="btn btn-primary">
-              <input @change="fileChange" type="file" style="display:none">
+              <input @change="fileChange" accept="application/pdf" type="file" style="display:none">
               选择一个pdf文件
             </label>
-            <button class="btn btn-info" type="button" @click="exportImages">下载</button>
-            <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
+            <button class="btn btn-info" type="button" @click="exportImages">导出图片</button>
+            <div class="set-wrap">
+              <input class="input" v-model.trim="exportName" placeholder="请输入导出图片名称" maxlength="50" >
+              <div>
+                <div class="flex items-center" style="margin-bottom: 5px">
+                  <span>导出图片格式：</span>
+                  <label class="inline-flex items-center"><input v-model="suffix" type="radio" value="jpg">jpg</label>
+                  <label class="inline-flex items-center"><input v-model="suffix" type="radio" value="png">png</label>
+                </div>
+                <div class="flex">
+                  <div><span>缩放比例</span> <span class="text-orange">{{scale}}</span></div>
+                  <input @change="selectChange" type="range" max="2" min="0.5" v-model="scale" step="0.1">
+                </div>
+              </div>
+            </div>
             <div class="info">
-              <div><b>页数</b>：{{pages}}</div>
-              <div><b>文件名</b>：{{fileName}}</div>
-              <div><b>文件大小</b>：{{fileSize}}</div>
+              <div>页数：<b>{{pages}}</b></div>
+              <div>文件名：<b>{{fileName}}</b></div>
+              <div>文件大小：<b>{{fileSize}}</b></div>
             </div>
         </footer>
       </div>
@@ -120,17 +162,18 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.9.359/build/pdf.worker.js";
 
-      var instance = new Vue({
+      new Vue({
         el: "#app",
         template: "#template",
         data() {
           return {
-            loading: false,
             exportName: "",
             pages: "",
             fileName: "",
             fileSize: "",
+            suffix: "jpg",
             pdf: null,
+            scale: 1,
           };
         },
         mounted() {},
@@ -141,7 +184,6 @@
             if (!file) {
               return;
             }
-            this.$refs.container.innerHTML = "";
             const size = file.size;
             const mb = (size / 1048576).toFixed(2) + "Mb";
             this.fileSize = mb;
@@ -170,10 +212,11 @@
             };
           },
           renderPdf(pdf) {
+            this.$refs.container.innerHTML = "";
             const vm = this;
             for (let i = 1; i <= pdf.numPages; i++) {
               pdf.getPage(i).then(function (page) {
-                const viewport = page.getViewport({ scale: 1.5 });
+                const viewport = page.getViewport({ scale: vm.scale });
                 const canvas = document.createElement("canvas");
                 const context = canvas.getContext("2d");
                 vm.$refs.container.appendChild(canvas);
@@ -187,21 +230,33 @@
               });
             }
           },
+          selectChange(e) {
+            const value = e.target.value;
+            if (this.pdf) {
+              this.renderPdf(this.pdf);
+            }
+          },
           exportImages() {
             const oCanvass = document.getElementsByTagName("canvas");
-            downloadQueue(Array.from(oCanvass), this.exportName);
+            if (!oCanvass.length) {
+              alert("请先导入PDF文件");
+              return;
+            }
+            downloadQueue(Array.from(oCanvass), this.exportName, this.suffix);
           },
         },
       });
 
-      function downloadQueue(list, name) {
+      function downloadQueue(list, name, suffix) {
         function getData(list) {
           var queue = [];
           list.forEach(function (canvas, index) {
             queue.push(function () {
-              const base64 = canvas.toDataURL("image/png");
-              var a = document.createElement("a");
-              a.download = `${name}${index + 1}.png`;
+              const base64 = canvas.toDataURL(
+                suffix == "jpg" ? "image/jpeg" : "image/png"
+              );
+              const a = document.createElement("a");
+              a.download = `${name}${index + 1}.${suffix}`;
               a.href = base64;
               document.body.appendChild(a);
               a.click();
