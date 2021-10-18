@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <title>文件转base64</title>
+    <style>
+      body {
+        word-break: break-all;
+        font-family: Consolas, "Andale Mono", "Lucida Console",
+          "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+      }
+      .empty {
+        position: relative;
+        width: 900px;
+        height: 200px;
+        line-height: 200px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding-left: 30px;
+        margin: 20px auto;
+        box-sizing: border-box;
+      }
+      .empty::before {
+        position: absolute;
+        font-size: 30px;
+        content: "任意文件\A拖到这里";
+        white-space: pre;
+        left: 50%;
+        top: 50%;
+        line-height: 1;
+        transform: translate(-50%, -50%);
+        color: gray;
+      }
+      .btn {
+        display: inline-block;
+        height: 48px;
+        line-height: 48px;
+        padding: 0 18px;
+        margin-right: 8px;
+        cursor: pointer;
+        border-radius: 4px;
+        background-color: rgb(253, 232, 186);
+      }
+
+      .content {
+        display: block;
+        width: 900px;
+        height: 400px;
+        margin: 0 auto;
+        overflow: auto;
+        outline: none;
+        padding: 10px;
+        border: 1px solid #ddd;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="empty">
+      <label class="btn"
+        >选择文件<input id="input" type="file" style="display: none"
+      /></label>
+    </div>
+    <textarea class="content"></textarea>
+    <script>
+      var oEmpty = document.querySelector(".empty");
+      var oInput = document.querySelector("#input");
+      var oContent = document.querySelector(".content");
+
+      oEmpty.addEventListener(
+        "dragenter",
+        function (event) {
+          event.preventDefault();
+        },
+        false
+      );
+      oEmpty.addEventListener(
+        "dragover",
+        function (event) {
+          event.preventDefault();
+        },
+        false
+      );
+      oEmpty.addEventListener(
+        "drop",
+        function (event) {
+          readFile(event.dataTransfer.files[0]);
+          event.preventDefault();
+        },
+        false
+      );
+
+      oInput.addEventListener(
+        "change",
+        function (e) {
+          var files = e.target.files;
+          if (!files.length) {
+            return;
+          }
+          readFile(files[0]);
+          e.target.value = "";
+        },
+        false
+      );
+
+      function readFile(file) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          oContent.innerHTML = e.target.result;
+          oContent.select();
+        };
+        reader.readAsDataURL(file);
+      }
+    </script>
+  </body>
+</html>
